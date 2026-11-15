@@ -118,3 +118,18 @@ class TestRequestField:
 
         cd = field.headers["Content-Disposition"]
         assert cd == "form-data; name=\"file\"; filename*=utf-8''n%C3%A4me"
+
+    @pytest.mark.parametrize(
+        ("name", "value"),
+        [
+            ("Valid-Name", "Invalid\r\nValue"),
+            ("Valid-Name", "Invalid\rValue"),
+            ("Valid-Name", "Invalid\nValue"),
+            ("Invalid-\r\nName", "ValidValue"),
+            ("Invalid-\rName", "ValidValue"),
+            ("Invalid-\nName", "ValidValue"),
+        ]
+    )
+    def test_invalid_headers(self, name: str, value: str) -> None:
+        with pytest.raises(ValueError):
+            RequestField("file", "data", headers={name: value})
