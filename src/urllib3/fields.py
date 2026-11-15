@@ -4,6 +4,8 @@ import email.utils
 import mimetypes
 import typing
 
+from .util.request import is_illegal_header_value, is_legal_header_name
+
 _TYPE_FIELD_VALUE = typing.Union[str, bytes]
 _TYPE_FIELD_VALUE_TUPLE = typing.Union[
     _TYPE_FIELD_VALUE,
@@ -296,13 +298,19 @@ class RequestField:
 
         sort_keys = ["Content-Disposition", "Content-Type", "Content-Location"]
         for sort_key in sort_keys:
-            if self.headers.get(sort_key, False):
+            if header_value := self.headers[sort_key]:
+                if is_illegal_header_value(header_value.encode("latin-1")):
+                    raise ValueError(f"Invalid header value {header_value!r}")
                 lines.append(f"{sort_key}: {self.headers[sort_key]}")
 
         for header_name, header_value in self.headers.items():
-            if header_name not in sort_keys:
-                if header_value:
-                    lines.append(f"{header_name}: {header_value}")
+            if header_name in sort_keys or not header_value:
+                continue
+            if not is_legal_header_name(header_name.encode("latin-1")):
+                raise ValueError(f"Invalid header name {header_name!r}")
+            if is_illegal_header_value(header_value.encode("latin-1")):
+                raise ValueError(f"Invalid header value {header_value!r}")
+            lines.append(f"{header_name}: {header_value}")
 
         lines.append("\r\n")
         return "\r\n".join(lines)

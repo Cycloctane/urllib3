@@ -69,7 +69,7 @@ def encode_multipart_formdata(
     for field in iter_field_objects(fields):
         body.write(f"--{boundary}\r\n".encode("latin-1"))
 
-        writer(body).write(field.render_headers())
+        body.write(field.render_headers().encode("latin-1"))
         data = field.data
 
         if isinstance(data, int):

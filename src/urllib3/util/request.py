@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import re
 import sys
 import typing
 from base64 import b64encode
@@ -55,6 +56,10 @@ _TYPE_BODY_POSITION = typing.Union[int, _TYPE_FAILEDTELL]
 # which 'should' have a body is because unknown methods should be
 # treated as if they were 'POST' which *does* expect a body.
 _METHODS_NOT_EXPECTING_BODY = {"GET", "HEAD", "DELETE", "TRACE", "OPTIONS", "CONNECT"}
+
+# Copied from CPython 3.12.13 Lib/http/client.py
+is_legal_header_name = re.compile(rb"[^:\s][^:\r\n]*").fullmatch
+is_illegal_header_value = re.compile(rb"\n(?![ \t])|\r(?![ \t\n])").search
 
 
 def make_headers(

@@ -51,7 +51,7 @@ from .exceptions import (
     SystemTimeWarning,
 )
 from .util import SKIP_HEADER, SKIPPABLE_HEADERS, connection, ssl_
-from .util.request import body_to_chunks
+from .util.request import body_to_chunks, is_illegal_header_value, is_legal_header_name
 from .util.ssl_ import assert_fingerprint as _assert_fingerprint
 from .util.ssl_ import (
     create_urllib3_context,
@@ -295,11 +295,6 @@ class HTTPConnection(_HTTPConnection):
                 return b"[" + ip + b"]"
             return ip
 
-        # Copied from CPython 3.12.13 Lib/http/client.py
-        _is_legal_header_name = staticmethod(re.compile(rb"[^:\s][^:\r\n]*").fullmatch)
-        _is_illegal_header_value = staticmethod(
-            re.compile(rb"\n(?![ \t])|\r(?![ \t\n])").search
-        )
         _contains_disallowed_url_pchar_re = re.compile("[\x00-\x20\x7f]")
 
         if sys.version_info < (3, 11, 16):
@@ -322,9 +317,9 @@ class HTTPConnection(_HTTPConnection):
                 for header, value in self._tunnel_headers.items():  # type: ignore[attr-defined]
                     header_bytes = header.encode("latin-1")
                     value_bytes = value.encode("latin-1")
-                    if not self._is_legal_header_name(header_bytes):
+                    if not is_legal_header_name(header_bytes):
                         raise ValueError(f"Invalid header name {header_bytes!r}")
-                    if self._is_illegal_header_value(value_bytes):
+                    if is_illegal_header_value(value_bytes):
                         raise ValueError(f"Invalid header value {value_bytes!r}")
                     headers.append(b"%s: %s\r\n" % (header_bytes, value_bytes))
                 headers.append(b"\r\n")
@@ -376,9 +371,9 @@ class HTTPConnection(_HTTPConnection):
                 for header, value in self._tunnel_headers.items():  # type: ignore[attr-defined]
                     header_bytes = header.encode("latin-1")
                     value_bytes = value.encode("latin-1")
-                    if not self._is_legal_header_name(header_bytes):
+                    if not is_legal_header_name(header_bytes):
                         raise ValueError(f"Invalid header name {header_bytes!r}")
-                    if self._is_illegal_header_value(value_bytes):
+                    if is_illegal_header_value(value_bytes):
                         raise ValueError(f"Invalid header value {value_bytes!r}")
                     headers.append(b"%s: %s\r\n" % (header_bytes, value_bytes))
                 headers.append(b"\r\n")
